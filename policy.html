@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>proxyzona - политика</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #000; color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: lowercase; overflow-x: hidden; line-height: 1.6;
+        }
+        ::selection { background: #fff; color: #000; }
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px; z-index: -2;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+            animation: grid-pan 20s linear infinite;
+        }
+        @keyframes grid-pan { 0% { background-position: 0 0; } 100% { background-position: 0 40px; } }
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px; z-index: 9998; pointer-events: none;
+        }
+        .section-title { font-size: 2rem; margin-bottom: 1.5rem; position: relative; display: inline-block; color: #fff; }
+        .section-title::after { content: '_'; animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        .btn-glitch {
+            display: inline-block; padding: 1.2rem 4rem; border: 1px solid #fff; color: #fff;
+            text-decoration: none; font-size: 1.2rem; position: relative; background: #000;
+            transition: all 0.3s ease; cursor: pointer; overflow: hidden;
+        }
+        .btn-glitch::before, .btn-glitch::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center; background: #fff; color: #000; opacity: 0;
+        }
+        .btn-glitch:hover { background: #fff; color: #000; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        .btn-glitch:hover::before { opacity: 1; left: 3px; clip-path: inset(10% 0 60% 0); animation: glitch-anim 0.2s infinite linear alternate-reverse; }
+        .btn-glitch:hover::after { opacity: 1; left: -3px; clip-path: inset(60% 0 10% 0); animation: glitch-anim-2 0.2s infinite linear alternate-reverse; }
+        @keyframes glitch-anim {
+            0% { clip-path: inset(15% 0 71% 0); } 20% { clip-path: inset(35% 0 11% 0); }
+            40% { clip-path: inset(85% 0 9% 0); } 60% { clip-path: inset(10% 0 41% 0); }
+            80% { clip-path: inset(65% 0 21% 0); } 100% { clip-path: inset(5% 0 81% 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip-path: inset(65% 0 10% 0); } 20% { clip-path: inset(15% 0 51% 0); }
+            40% { clip-path: inset(45% 0 21% 0); } 60% { clip-path: inset(85% 0 11% 0); }
+            80% { clip-path: inset(25% 0 71% 0); } 100% { clip-path: inset(55% 0 81% 0); }
+        }
+
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 2rem; z-index: 10001;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .btn-small { padding: 0.6rem 1.5rem; font-size: 0.9rem; }
+
+        .lang-switcher {
+            display: flex; gap: 0.5rem; align-items: center; font-family: 'JetBrains Mono', monospace;
+        }
+        .lang-btn {
+            background: none; border: none; color: #555; font-family: inherit;
+            font-size: 1.1rem; cursor: pointer; transition: color 0.3s, text-shadow 0.3s;
+            text-transform: lowercase; padding: 0.2rem;
+        }
+        .lang-btn:hover { color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+        .lang-btn.active { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.8); }
+        .lang-sep { color: #333; user-select: none; }
+
+        .cyber-cursor-canvas {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 10000; mix-blend-mode: difference;
+        }
+        @media (hover: none) and (pointer: coarse) {
+            .cyber-cursor-canvas { display: none !important; }
+        }
+
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* Policy specific styles */
+        .policy-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 8rem 2rem 4rem;
+            position: relative;
+            z-index: 10;
+        }
+        .policy-block {
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px dashed #333;
+        }
+        .policy-block:last-child {
+            border-bottom: none;
+        }
+        .policy-block h2 {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 1rem;
+            font-weight: normal;
+        }
+        .policy-block p {
+            color: #ccc;
+            margin-bottom: 0.8rem;
+        }
+        .policy-block ul {
+            list-style: none;
+            padding-left: 1.5rem;
+        }
+        .policy-block ul li {
+            color: #aaa;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+        .policy-block ul li::before {
+            content: '>';
+            position: absolute;
+            left: -1.5rem;
+            color: #555;
+        }
+        .mb-8 { margin-bottom: 2rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="btn-glitch btn-small" data-text="назад" data-i18n="nav-back">назад</a>
+        <div class="lang-switcher">
+            <button class="lang-btn active" data-lang="ru">ru</button>
+            <span class="lang-sep">/</span>
+            <button class="lang-btn" data-lang="en">en</button>
+        </div>
+    </nav>
+    <div class="bg-grid"></div>
+    <div class="scanlines"></div>
+
+    <main class="policy-container">
+        <h1 class="section-title mb-8 reveal" data-i18n="policy-title">политика использования</h1>
+        
+        <div class="policy-block reveal">
+            <h2 data-i18n="pol1-title">1. общие положения</h2>
+            <p data-i18n="pol1-desc">сервис предоставляет инструменты для защиты интернет-соединения и маршрутизации трафика. использование сервиса означает согласие с данной политикой.</p>
+        </div>
+
+        <div class="policy-block reveal">
+            <h2 data-i18n="pol2-title">2. предоставляемые услуги</h2>
+            <ul>
+                <li data-i18n="pol2-l1">доступ к прокси-сервису</li>
+                <li data-i18n="pol2-l2">выдача vless-ключей для подключения</li>
+                <li data-i18n="pol2-l3">доступ к серверной инфраструктуре через клиентские приложения</li>
+            </ul>
+        </div>
+
+        <div class="policy-block reveal">
+            <h2 data-i18n="pol3-title">3. условия использования</h2>
+            <ul>
+                <li data-i18n="pol3-l1">один пользователь может использовать до 5 устройств</li>
+                <li data-i18n="pol3-l2">передача доступа третьим лицам ограничена</li>
+                <li data-i18n="pol3-l3">массовое распространение конфигураций запрещено</li>
+            </ul>
+        </div>
+
+        <div class="policy-block reveal">
+            <h2 data-i18n="pol4-title">4. telegram-прокси</h2>
+            <ul>
+                <li data-i18n="pol4-l1">при активной подписке предоставляется telegram-прокси</li>
+                <li data-i18n="pol4-l2">сервис заботится о стабильной связи с клиентами</li>
+                <li data-i18n="pol4-l3">telegram-прокси является дополнительной услугой к vless-прокси</li>
+                <li data-i18n="pol4-l4">прокси работает только при активной подписке</li>
+                <li data-i18n="pol4-l5">предназначен для поддержания постоянного доступа к telegram</li>
+            </ul>
+        </div>
+
+        <div class="policy-block reveal">
+            <h2 data-i18n="pol5-title">5. ограничения</h2>
+            <ul>
+                <li data-i18n="pol5-l1">запрещён шейринг telegram-прокси</li>
+                <li data-i18n="pol5-l2">запрещено использование сервиса для незаконной деятельности</li>
+                <li data-i18n="pol5-l3">запрещены попытки перегрузки сервиса или обхода ограничений</li>
+            </ul>
+        </div>
+
+        <div class="policy-block reveal">
+            <h2 data-i18n="pol6-title">6. безопасность</h2>
+            <ul>
+                <li data-i18n="pol6-l1">используются современные методы шифрования</li>
+                <li data-i18n="pol6-l2">сервис направлен на защиту соединения пользователя</li>
+                <li data-i18n="pol6-l3">поддерживается стабильная и безопасная работа</li>
+            </ul>
+        </div>
+
+        <div class="policy-block reveal">
+            <h2 data-i18n="pol7-title">7. ответственность</h2>
+            <ul>
+                <li data-i18n="pol7-l1">пользователь самостоятельно несёт ответственность за использование сервиса</li>
+                <li data-i18n="pol7-l2">сервис не отвечает за действия пользователей</li>
+            </ul>
+        </div>
+
+        <div class="policy-block reveal">
+            <h2 data-i18n="pol8-title">8. изменения условий</h2>
+            <ul>
+                <li data-i18n="pol8-l1">условия могут обновляться без предварительного уведомления</li>
+                <li data-i18n="pol8-l2">актуальная версия всегда доступна на сайте</li>
+            </ul>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Анимация появления
+            const observerOptions = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) entry.target.classList.add('active');
+                });
+            }, observerOptions);
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+            
+            // Сразу показываем первый заголовок
+            setTimeout(() => {
+                const firstReveal = document.querySelector('.section-title.reveal');
+                if (firstReveal) firstReveal.classList.add('active');
+            }, 100);
+
+            // --- переключение языков ---
+            const translations = {
+                ru: {
+                    "nav-back": "назад",
+                    "policy-title": "политика использования",
+                    "pol1-title": "1. общие положения",
+                    "pol1-desc": "сервис предоставляет инструменты для защиты интернет-соединения и маршрутизации трафика. использование сервиса означает согласие с данной политикой.",
+                    "pol2-title": "2. предоставляемые услуги",
+                    "pol2-l1": "доступ к прокси-сервису",
+                    "pol2-l2": "выдача vless-ключей для подключения",
+                    "pol2-l3": "доступ к серверной инфраструктуре через клиентские приложения",
+                    "pol3-title": "3. условия использования",
+                    "pol3-l1": "один пользователь может использовать до 5 устройств",
+                    "pol3-l2": "передача доступа третьим лицам ограничена",
+                    "pol3-l3": "массовое распространение конфигураций запрещено",
+                    "pol4-title": "4. telegram-прокси",
+                    "pol4-l1": "при активной подписке предоставляется telegram-прокси",
+                    "pol4-l2": "сервис заботится о стабильной связи с клиентами",
+                    "pol4-l3": "telegram-прокси является дополнительной услугой к vless-прокси",
+                    "pol4-l4": "прокси работает только при активной подписке",
+                    "pol4-l5": "предназначен для поддержания постоянного доступа к telegram",
+                    "pol5-title": "5. ограничения",
+                    "pol5-l1": "запрещён шейринг telegram-прокси",
+                    "pol5-l2": "запрещено использование сервиса для незаконной деятельности",
+                    "pol5-l3": "запрещены попытки перегрузки сервиса или обхода ограничений",
+                    "pol6-title": "6. безопасность",
+                    "pol6-l1": "используются современные методы шифрования",
+                    "pol6-l2": "сервис направлен на защиту соединения пользователя",
+                    "pol6-l3": "поддерживается стабильная и безопасная работа",
+                    "pol7-title": "7. ответственность",
+                    "pol7-l1": "пользователь самостоятельно несёт ответственность за использование сервиса",
+                    "pol7-l2": "сервис не отвечает за действия пользователей",
+                    "pol8-title": "8. изменения условий",
+                    "pol8-l1": "условия могут обновляться без предварительного уведомления",
+                    "pol8-l2": "актуальная версия всегда доступна на сайте"
+                },
+                en: {
+                    "nav-back": "back",
+                    "policy-title": "terms of service",
+                    "pol1-title": "1. general provisions",
+                    "pol1-desc": "the service provides tools for protecting internet connections and routing traffic. using the service implies agreement with this policy.",
+                    "pol2-title": "2. provided services",
+                    "pol2-l1": "access to the proxy service",
+                    "pol2-l2": "issuance of vless keys for connection",
+                    "pol2-l3": "access to server infrastructure via client applications",
+                    "pol3-title": "3. terms of use",
+                    "pol3-l1": "one user can use up to 5 devices",
+                    "pol3-l2": "transferring access to third parties is restricted",
+                    "pol3-l3": "mass distribution of configurations is prohibited",
+                    "pol4-title": "4. telegram proxy",
+                    "pol4-l1": "an active subscription provides a telegram proxy",
+                    "pol4-l2": "the service ensures stable communication with clients",
+                    "pol4-l3": "telegram proxy is an additional service to the vless proxy",
+                    "pol4-l4": "the proxy works only with an active subscription",
+                    "pol4-l5": "designed to maintain continuous access to telegram",
+                    "pol5-title": "5. restrictions",
+                    "pol5-l1": "sharing the telegram proxy is prohibited",
+                    "pol5-l2": "using the service for illegal activities is prohibited",
+                    "pol5-l3": "attempts to overload the service or bypass restrictions are prohibited",
+                    "pol6-title": "6. security",
+                    "pol6-l1": "modern encryption methods are used",
+                    "pol6-l2": "the service aims to protect the user's connection",
+                    "pol6-l3": "stable and secure operation is maintained",
+                    "pol7-title": "7. liability",
+                    "pol7-l1": "the user is solely responsible for using the service",
+                    "pol7-l2": "the service is not responsible for users' actions",
+                    "pol8-title": "8. changes to terms",
+                    "pol8-l1": "terms may be updated without prior notice",
+                    "pol8-l2": "the current version is always available on the website"
+                }
+            };
+
+            function setLanguage(lang) {
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (translations[lang] && translations[lang][key]) {
+                        el.textContent = translations[lang][key];
+                    }
+                });
+                
+                document.querySelectorAll('.lang-btn').forEach(btn => {
+                    if (btn.getAttribute('data-lang') === lang) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                
+                document.documentElement.lang = lang;
+                
+                // Обновляем data-text для кнопок с glitch-эффектом
+                document.querySelectorAll('.btn-glitch').forEach(btn => {
+                    const key = btn.getAttribute('data-i18n');
+                    if (key && translations[lang] && translations[lang][key]) {
+                        btn.setAttribute('data-text', translations[lang][key]);
+                    }
+                });
+            }
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setLanguage(btn.getAttribute('data-lang'));
+                    // Сохраняем выбор языка
+                    localStorage.setItem('preferred-lang', btn.getAttribute('data-lang'));
+                });
+            });
+
+            // Восстанавливаем язык
+            const savedLang = localStorage.getItem('preferred-lang');
+            if (savedLang) {
+                setLanguage(savedLang);
+            }
+
+            // --- кастомный пиксельный курсор ---
+            const canvas = document.createElement('canvas');
+            canvas.className = 'cyber-cursor-canvas';
+            document.body.appendChild(canvas);
+            const ctx = canvas.getContext('2d');
+
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            window.addEventListener('resize', () => {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            });
+
+            let mouseX = width / 2;
+            let mouseY = height / 2;
+            let cursorX = mouseX;
+            let cursorY = mouseY;
+            let isHovering = false;
+
+            const speed = 0.15;
+            const baseRadius = 16;
+            const hoverRadius = 17.5;
+            const gridSize = 4;
+            const dotSize = 2;
+            const trailLength = 8;
+
+            let currentRadius = baseRadius;
+            const trail = [];
+
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            function drawDotMatrixCircle(cx, cy, radius, baseAlpha, isMain) {
+                const gridCx = Math.floor(cx / gridSize) * gridSize;
+                const gridCy = Math.floor(cy / gridSize) * gridSize;
+                const gridRadius = radius / gridSize;
+                const gridRadiusSq = gridRadius * gridRadius;
+                const maxR = Math.ceil(gridRadius);
+                const time = Date.now() * 0.001;
+
+                for (let x = -maxR; x <= maxR; x++) {
+                    for (let y = -maxR; y <= maxR; y++) {
+                        if (x * x + y * y <= gridRadiusSq) {
+                            const px = gridCx + x * gridSize;
+                            const py = gridCy + y * gridSize;
+                            let dotAlpha = baseAlpha;
+
+                            if (isMain) {
+                                const noise = Math.sin(time * 2 + px * 0.1) * Math.cos(time * 1.5 + py * 0.1);
+                                const normalizedNoise = (noise + 1) / 2;
+                                const minAlpha = isHovering ? 0.6 : 0.15;
+                                const flicker = minAlpha + normalizedNoise * (1 - minAlpha);
+                                dotAlpha *= flicker;
+                            }
+
+                            ctx.fillStyle = `rgba(255, 255, 255, ${dotAlpha})`;
+                            ctx.fillRect(px, py, dotSize, dotSize);
+                        }
+                    }
+                }
+            }
+
+            function animateCursor() {
+                ctx.clearRect(0, 0, width, height);
+
+                cursorX += (mouseX - cursorX) * speed;
+                cursorY += (mouseY - cursorY) * speed;
+
+                trail.push({ x: cursorX, y: cursorY });
+                if (trail.length > trailLength) {
+                    trail.shift();
+                }
+
+                const targetRadius = isHovering ? hoverRadius : baseRadius;
+                currentRadius += (targetRadius - currentRadius) * 0.1;
+
+                const breathing = 0.85 + Math.sin(Date.now() * 0.002) * 0.15;
+                const mainAlpha = isHovering ? 1 : breathing;
+
+                for (let i = 0; i < trail.length - 1; i += 2) { 
+                    const pos = trail[i];
+                    const progress = i / trailLength;
+                    const alpha = progress * 0.15;
+                    const trailRadius = currentRadius * progress;
+                    drawDotMatrixCircle(pos.x, pos.y, trailRadius, alpha, false);
+                }
+
+                drawDotMatrixCircle(cursorX, cursorY, currentRadius, mainAlpha, true);
+                requestAnimationFrame(animateCursor);
+            }
+            animateCursor();
+
+            const interactives = document.querySelectorAll('a, button, .card, .tech-card');
+            interactives.forEach(el => {
+                el.addEventListener('mouseenter', () => isHovering = true);
+                el.addEventListener('mouseleave', () => isHovering = false);
+            });
+        });
+    </script>
+</body>
+</html>
