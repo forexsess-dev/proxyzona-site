@@ -134,12 +134,29 @@
             .cyber-cursor-canvas { display: none !important; }
         }
 
+        /* --- навигация --- */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            z-index: 10001;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .btn-small {
+            padding: 0.6rem 1.5rem;
+            font-size: 0.9rem;
+        }
+
         /* --- переключатель языков --- */
         .lang-switcher {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 10001;
             display: flex;
             gap: 0.5rem;
             align-items: center;
@@ -171,11 +188,14 @@
     </style>
 </head>
 <body>
-    <div class="lang-switcher">
-        <button class="lang-btn active" data-lang="ru">ru</button>
-        <span class="lang-sep">/</span>
-        <button class="lang-btn" data-lang="en">en</button>
-    </div>
+    <nav class="navbar">
+        <a href="policy.html" class="btn-glitch btn-small" data-text="политика использования" data-i18n="nav-policy">политика использования</a>
+        <div class="lang-switcher">
+            <button class="lang-btn active" data-lang="ru">ru</button>
+            <span class="lang-sep">/</span>
+            <button class="lang-btn" data-lang="en">en</button>
+        </div>
+    </nav>
     <div class="bg-grid"></div>
     <div class="scanlines"></div>
     <div id="loader">
@@ -204,7 +224,7 @@
                 <h2 class="section-title" data-i18n="contact-title">связаться</h2>
                 <div class="mt-8">
                     <!-- ИЗМЕНИТЕ USERNAME TELEGRAM В ССЫЛКЕ НИЖЕ -->
-                    <a href="https://t.me/proxyzonabot" class="btn-glitch" target="_blank" data-text="telegram">telegram</a>
+                    <a href="https://t.me/your_telegram_username" class="btn-glitch" target="_blank" data-text="telegram">telegram</a>
                 </div>
             </div>
         </section>
@@ -276,27 +296,38 @@
             ];
             const terminal = document.getElementById('terminal');
             const loader = document.getElementById('loader');
-            let delay = 400;
-            document.body.style.overflow = 'hidden';
-            lines.forEach((line, index) => {
+            
+            // Проверяем, была ли уже показана анимация в этой сессии
+            if (sessionStorage.getItem('proxyzona_loader_seen')) {
+                loader.style.display = 'none';
+                document.body.style.overflow = '';
                 setTimeout(() => {
-                    const el = document.createElement('div');
-                    el.className = 'loader-line';
-                    el.textContent = line;
-                    terminal.appendChild(el);
-                    if (index === lines.length - 1) {
-                        setTimeout(() => {
-                            loader.style.opacity = '0';
-                            loader.style.visibility = 'hidden';
-                            document.body.style.overflow = '';
+                    document.querySelectorAll('#hero .reveal').forEach(el => el.classList.add('active'));
+                }, 100);
+            } else {
+                sessionStorage.setItem('proxyzona_loader_seen', 'true');
+                let delay = 400;
+                document.body.style.overflow = 'hidden';
+                lines.forEach((line, index) => {
+                    setTimeout(() => {
+                        const el = document.createElement('div');
+                        el.className = 'loader-line';
+                        el.textContent = line;
+                        terminal.appendChild(el);
+                        if (index === lines.length - 1) {
                             setTimeout(() => {
-                                document.querySelectorAll('#hero .reveal').forEach(el => el.classList.add('active'));
-                            }, 300);
-                        }, 1500);
-                    }
-                }, delay);
-                delay += Math.random() * 500 + 400;
-            });
+                                loader.style.opacity = '0';
+                                loader.style.visibility = 'hidden';
+                                document.body.style.overflow = '';
+                                setTimeout(() => {
+                                    document.querySelectorAll('#hero .reveal').forEach(el => el.classList.add('active'));
+                                }, 300);
+                            }, 1500);
+                        }
+                    }, delay);
+                    delay += Math.random() * 500 + 400;
+                });
+            }
             const observerOptions = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -315,6 +346,7 @@
             // --- переключение языков ---
             const translations = {
                 ru: {
+                    "nav-policy": "политика использования",
                     "hero-subtitle": "безопасный интернет и шифрование трафика",
                     "about-title": "о нас",
                     "about-desc": "proxyzona — это сервис, предоставляющий инструменты для защиты интернет-соединения. используются современные технологии маршрутизации и шифрования трафика для обеспечения конфиденциальности, безопасности и стабильного доступа к сети.",
@@ -336,6 +368,7 @@
                     "tech6-desc": "защита сервера от автоматических атак подбора паролей."
                 },
                 en: {
+                    "nav-policy": "terms of use",
                     "hero-subtitle": "secure internet and traffic encryption",
                     "about-title": "about us",
                     "about-desc": "proxyzona is a service providing tools to protect your internet connection. modern routing and traffic encryption technologies are used to ensure privacy, security, and stable network access.",
@@ -375,13 +408,28 @@
                 });
                 
                 document.documentElement.lang = lang;
+
+                // Обновляем data-text для кнопок с glitch-эффектом
+                document.querySelectorAll('.btn-glitch').forEach(btn => {
+                    const key = btn.getAttribute('data-i18n');
+                    if (key && translations[lang] && translations[lang][key]) {
+                        btn.setAttribute('data-text', translations[lang][key]);
+                    }
+                });
             }
 
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     setLanguage(btn.getAttribute('data-lang'));
+                    localStorage.setItem('preferred-lang', btn.getAttribute('data-lang'));
                 });
             });
+
+            // Восстанавливаем язык
+            const savedLang = localStorage.getItem('preferred-lang');
+            if (savedLang) {
+                setLanguage(savedLang);
+            }
 
             // --- кастомный пиксельный курсор ---
             const canvas = document.createElement('canvas');
